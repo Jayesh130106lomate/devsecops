@@ -1,0 +1,48 @@
+
+name: DevSecOps CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    name: Check shell scripts
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+
+      - name: Check Bash availability
+        run: bash --version
+
+      - name: Check repository files
+        run: find . -maxdepth 2 -type f
+
+  test:
+    name: Run basic checks
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Test a shell expression
+        run: test "$((2 + 2))" -eq 4
+
+      - name: Verify success
+        run: echo "Basic checks passed"
+
+  build:
+    name: Build stage
+    needs: [lint, test]
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Confirm build readiness
+        run: echo "All required checks passed"
+

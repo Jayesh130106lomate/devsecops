@@ -1,0 +1,25 @@
+name: My First Workflow
+
+on:
+  push:
+
+jobs:
+  hello:
+    name: Linux Command Practice
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Print a greeting
+        run: echo "Hello from GitHub Actions!"
+
+      - name: Check the runner
+        run: |
+          whoami
+          pwd
+          uname -a
+
+      - name: Check installed tools
+        run: |
+          git --version
+          bash --version
+

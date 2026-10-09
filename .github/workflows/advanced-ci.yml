@@ -1,0 +1,91 @@
+
+name: Advanced CI Lab
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/**'
+      - '.github/workflows/advanced-ci.yml'
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Run tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+
+      - name: Run basic test
+        run: test "$((2 + 2))" -eq 4
+
+      - name: Confirm success
+        run: echo "Tests passed"
+
+  prepare:
+    name: Prepare build metadata
+    runs-on: ubuntu-latest
+    outputs:
+      build_tag: ${{ steps.meta.outputs.tag }}
+
+    steps:
+      - name: Generate build tag
+        id: meta
+        run: echo "tag=build-${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+
+  build:
+    name: Build and upload
+    needs: [test, prepare]
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+
+      - name: Create build output
+        env:
+          BUILD_TAG: ${{ needs.prepare.outputs.build_tag }}
+        run: |
+          mkdir -p dist
+          echo "Build: $BUILD_TAG" > dist/build-info.txt
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-output
+          path: dist/
+
+  verify:
+    name: Verify artifact
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: build-output
+          path: dist/
+
+      - name: Verify build metadata
+        run: |
+          cat dist/build-info.txt
+          grep -q '^Build: build-' dist/build-info.txt
+
+  deploy-check:
+    name: Simulated deployment check
+    needs: [test, build, verify]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check deployment readiness
+        run: echo "All required checks passed"
+
